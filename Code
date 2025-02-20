@@ -1,0 +1,121 @@
+#include <NewPing.h>
+
+// Define pin connections for ultrasonic sensors
+#define TRIGGER_CEN 12
+#define ECHO_CEN 13
+#define TRIGGER_LEFT 7
+#define ECHO_LEFT 6
+#define TRIGGER_RIGHT 9
+#define ECHO_RIGHT 8
+
+// Define motor control pins
+int i1 = 2, i2 = 3, i3 = 4, i4 = 5;
+int e1 = 10, e2 = 11;
+
+// Sensor parameters
+#define MAX_DISTANCE 100  // Maximum distance (in cm) to measure
+int threshold = 20;       // Obstacle detection threshold (in cm)
+
+// Create NewPing objects for each ultrasonic sensor
+NewPing sonarCenter(TRIGGER_CEN, ECHO_CEN, MAX_DISTANCE);
+NewPing sonarLeft(TRIGGER_LEFT, ECHO_LEFT, MAX_DISTANCE);
+NewPing sonarRight(TRIGGER_RIGHT, ECHO_RIGHT, MAX_DISTANCE);
+
+void setup() {
+  // Set motor control pins
+  pinMode(i1, OUTPUT);
+  pinMode(i2, OUTPUT);
+  pinMode(i3, OUTPUT);
+  pinMode(i4, OUTPUT);
+  pinMode(e1, OUTPUT);
+  pinMode(e2, OUTPUT);
+
+  Serial.begin(9600);  // Start serial communication for debugging
+  delay(1000);
+}
+
+void loop() {
+  // Measure distances using NewPing
+  int dist_cen = sonarCenter.ping_cm();
+  int dist_left = sonarLeft.ping_cm();
+  int dist_right = sonarRight.ping_cm();
+
+  // Print distances for debugging
+  Serial.print("Center: ");
+  Serial.print(dist_cen);
+  Serial.print(" cm | Left: ");
+  Serial.print(dist_left);
+  Serial.print(" cm | Right: ");
+  Serial.println(dist_right);
+
+  // Basic obstacle avoidance logic
+  if (dist_cen < threshold && dist_cen > 0) {
+    stop();              // Stop moving
+    delay(500);
+    backword();          // Move backward
+    delay(500);
+
+    // Turn based on which side has more space
+    if (dist_left > dist_right) {
+      left();
+    } else {
+      right();
+    }
+    delay(500);
+  } 
+  else if (dist_left < threshold && dist_left > 0) {
+    right();
+    delay(500);
+  } 
+  else if (dist_right < threshold && dist_right > 0) {
+    left();
+    delay(500);
+  } 
+  else {
+    forword();  // Move forward if no obstacles
+  }
+
+  delay(100); // Small delay for sensor stability
+}
+
+// Motor control functions
+void stop() {
+  digitalWrite(e1, LOW);
+  digitalWrite(e2, LOW);
+}
+
+void forword() {
+  analogWrite(e1, HIGH);
+  analogWrite(e2, HIGH);
+  digitalWrite(i1, HIGH);
+  digitalWrite(i2, LOW);
+  digitalWrite(i3, LOW);
+  digitalWrite(i4, HIGH);
+}
+
+void backword() {
+  analogWrite(e1, HIGH);
+  analogWrite(e2, HIGH);
+  digitalWrite(i1, LOW);
+  digitalWrite(i2, HIGH);
+  digitalWrite(i3, HIGH);
+  digitalWrite(i4, LOW);
+}
+
+void right() {
+  analogWrite(e1, LOW);
+  analogWrite(e2, HIGH);
+  digitalWrite(i1, LOW);
+  digitalWrite(i2, LOW);
+  digitalWrite(i3, LOW);
+  digitalWrite(i4, HIGH);
+}
+
+void left() {
+  analogWrite(e1, HIGH);
+  analogWrite(e2, LOW);
+  digitalWrite(i1, HIGH);
+  digitalWrite(i2, LOW);
+  digitalWrite(i3, LOW);
+  digitalWrite(i4, LOW);
+}
